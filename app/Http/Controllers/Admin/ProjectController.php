@@ -8,6 +8,8 @@ use App\Http\Requests\UpdateProjectRequest;
 use App\Models\Project;
 use App\Models\Category;
 use App\Models\Language;
+// use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -21,8 +23,15 @@ class ProjectController extends Controller
      */
     public function index()
     {
-        $projects = Project::paginate(3);
+
+        if(Auth::user()->isAdmin()){
+            $projects = Project::paginate(3);
+        } else {
+            $userId = Auth::id();
+            $projects = Project::where('user_id', $userId)->paginate(3);
+        }
         return view('admin.projects.index', compact('projects'));
+
     }
 
     /**
@@ -45,9 +54,11 @@ class ProjectController extends Controller
      */
     public function store(StoreProjectRequest $request)
     {
+        $userId = Auth::id();
         $data = $request->validated();
         $slug = Project::generateSlug($request->name_project);
         $data['slug'] = $slug;
+        $data['user_id'] = $userId;
         if($request->hasFile('cover_image')){
             $path = Storage::disk('public')->put('project_images', $request->cover_image);
             $data['cover_image'] = $path;
@@ -69,6 +80,9 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
+        if(!Auth::user()->isAdmin() && $project->user_id !== Auth::id()){
+            abort(403);
+        }
         return view('admin.projects.show', compact('project'));
     }
 
@@ -80,6 +94,9 @@ class ProjectController extends Controller
      */
     public function edit(Project $project)
     {
+        if(!Auth::user()->isAdmin() && $project->user_id !== Auth::id()){
+            abort(403);
+        }
         $categories = Category::all();
         $languages = Language::all();
         return view('admin.projects.edit', compact('project','categories', 'languages'));
@@ -94,6 +111,9 @@ class ProjectController extends Controller
      */
     public function update(UpdateProjectRequest $request, Project $project)
     {
+        if(!Auth::user()->isAdmin() && $project->user_id !== Auth::id()){
+            abort(403);
+        }
         $data = $request->validated();
         $slug = Project::generateSlug($request->name_project);
         $data['slug'] = $slug;
@@ -126,6 +146,9 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project)
     {
+        if(!Auth::user()->isAdmin() && $project->user_id !== Auth::id()){
+            abort(403);
+        }
         if($project->cover_image){
             Storage::delete($project->cover_image);
         }

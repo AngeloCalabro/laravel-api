@@ -11,11 +11,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Project extends Model
 {
     use HasFactory;
-    protected $fillable = ['name_project', 'slug', 'description','cover_image','category_id'];
+    protected $fillable = ['name_project', 'slug', 'description','cover_image','category_id', 'user_id'];
 
     public static function generateSlug($name_project)
     {
         return Str::slug($name_project, '-');
+    }
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+
     }
     public function category():BelongsTo
     {
